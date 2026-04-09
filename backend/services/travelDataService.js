@@ -245,8 +245,8 @@ function buildTravelView(schedule, tables, overrides = {}, offsetMs = 0) {
   const shiftedSchedule = buildShiftedSchedule(schedule, offsetMs);
   const route = byId(tables.routes, "route_id", schedule.route_id);
   const vehicle = byId(tables.vehicles, "vehicle_id", schedule.vehicle_id);
-  const mode = byId(tables.modes, "mode_id", route?.mode_id);
   const operator = byId(tables.operators, "operator_id", route?.operator_id);
+  const mode = byId(tables.modes, "mode_id", operator?.mode_id);
   const start = byId(tables.locations, "location_id", route?.start_location_id);
   const end = byId(tables.locations, "location_id", route?.end_location_id);
   const routePath = getRoutePath(route, tables, schedule, offsetMs);
@@ -463,12 +463,12 @@ async function loadTables(connection) {
   const operators = await queryRows(connection, "SELECT operator_id, operator_name, mode_id, contact_email, contact_phone FROM operator ORDER BY operator_id");
   const locations = await queryRows(connection, "SELECT location_id, location_name, city, state, country, location_type FROM location ORDER BY location_id");
   const passengers = await queryRows(connection, "SELECT passenger_id, user_id, passenger_name, age, gender, id_proof_type, id_proof_number FROM passenger");
-  const vehicles = await queryRows(connection, "SELECT vehicle_id, mode_id, operator_id, vehicle_number, vehicle_name, total_seats, seat_fare, status FROM vehicle ORDER BY vehicle_id");
-  const routes = await queryRows(connection, "SELECT route_id, route_name, mode_id, operator_id, start_location_id, end_location_id FROM route ORDER BY route_id");
-  const routeStops = await queryRows(connection, "SELECT route_stop_id, route_id, location_id, stop_sequence, arrival_datetime, departure_datetime FROM route_stop ORDER BY route_id, stop_sequence");
+  const vehicles = await queryRows(connection, "SELECT v.vehicle_id, v.operator_id, v.vehicle_number, v.vehicle_name, v.total_seats, v.status, o.mode_id FROM vehicle v JOIN operator o ON v.operator_id = o.operator_id");
+  const routes = await queryRows(connection, "SELECT r.route_id, r.route_name, o.mode_id, o.operator_id, r.start_location_id, r.end_location_id FROM route r JOIN operator o ON r.operator_id = o.operator_id ORDER BY r.route_id");
+  const routeStops = await queryRows(connection, "SELECT route_id, location_id, stop_sequence, arrival_datetime, departure_datetime FROM route_stop ORDER BY route_id, stop_sequence");
   const schedules = await queryRows(connection, "SELECT schedule_id, vehicle_id, route_id, departure_datetime, arrival_datetime, base_fare, seats_remaining, status FROM schedule ORDER BY schedule_id");
   const bookings = await queryRows(connection, "SELECT booking_id, user_id, schedule_id, boarding_location_id, dropping_location_id, booking_date, pnr_number, total_amount, booking_status FROM booking ORDER BY booking_id");
-  const bookingPassengers = await queryRows(connection, "SELECT booking_passenger_id, booking_id, passenger_id, seat_number, fare FROM booking_passenger ORDER BY booking_passenger_id");
+  const bookingPassengers = await queryRows(connection, "SELECT booking_id, passenger_id, seat_number, fare FROM booking_passenger ORDER BY booking_id");
   const payments = await queryRows(connection, "SELECT payment_id, booking_id, payment_date, payment_method, amount_paid, payment_status, transaction_ref FROM payment ORDER BY payment_id");
   const cancellations = await queryRows(connection, "SELECT cancellation_id, booking_id, cancellation_date, refund_amount, cancellation_reason, refund_status FROM cancellation ORDER BY cancellation_id");
 
@@ -656,7 +656,6 @@ async function getAdminResource(resourceKey) {
         vehicle_number: vehicle.vehicle_number,
         vehicle_name: vehicle.vehicle_name,
         total_seats: vehicle.total_seats,
-        seat_fare: Number(vehicle.seat_fare || 0),
         status: vehicle.status
       }));
     }
@@ -671,7 +670,7 @@ async function getAdminResource(resourceKey) {
           .filter((stop) => String(stop.route_id) === String(route.route_id))
           .sort((a, b) => Number(a.stop_sequence) - Number(b.stop_sequence))
           .map((stop) => ({
-            route_stop_id: stop.route_stop_id,
+            route_id: stop.route_id,
             location_id: String(stop.location_id),
             location_name: byId(tables.locations, "location_id", stop.location_id)?.location_name || "",
             city: byId(tables.locations, "location_id", stop.location_id)?.city || "",
@@ -783,7 +782,6 @@ async function getRouteFormOptions() {
   });
 }
 async function createPassenger(connection, payload) {
-  const passengerId = await getNextPrimaryKey(connection, "passenger", "passenger_id", "passenger_seq");
   await execute(
     connection,
     `INSERT INTO passenger (passenger_id, user_id, passenger_name, age, gender, id_proof_type, id_proof_number)
@@ -919,13 +917,11 @@ async function createBooking(payload) {
 
     for (let index = 0; index < payload.passengers.length; index += 1) {
       const passengerId = await createPassenger(connection, { ...payload.passengers[index], userId: payload.userId });
-      const bookingPassengerId = await getNextPrimaryKey(connection, "booking_passenger", "booking_passenger_id", "booking_passenger_seq");
       await execute(
         connection,
-        `INSERT INTO booking_passenger (booking_passenger_id, booking_id, passenger_id, seat_number, fare)
-         VALUES (:booking_passenger_id, :booking_id, :passenger_id, :seat_number, :fare)`,
+        `INSERT INTO booking_passenger (booking_id, passenger_id, seat_number, fare)
+         VALUES (:booking_id, :passenger_id, :seat_number, :fare)`,
         {
-          booking_passenger_id: bookingPassengerId,
           booking_id: bookingId,
           passenger_id: passengerId,
           seat_number: assignedSeats[index],
@@ -1125,38 +1121,32 @@ async function upsertAdminResource(resourceKey, record) {
     }
 
     if (resourceKey === "vehicles") {
-      const modeId = Number(record.mode_id);
       const operatorId = Number(record.operator_id);
       const totalSeats = Number(record.total_seats);
-      const seatFare = Number(record.seat_fare || 0);
       const status = normalizeStatus(record.status, ["active", "inactive"], "active");
 
       if (record.id) {
         await execute(
           connection,
           `UPDATE vehicle
-              SET mode_id = :mode_id,
-                  operator_id = :operator_id,
+              SET operator_id = :operator_id,
                   vehicle_number = :vehicle_number,
                   vehicle_name = :vehicle_name,
                   total_seats = :total_seats,
-                  seat_fare = :seat_fare,
                   status = :status
             WHERE vehicle_id = :vehicle_id`,
           {
             vehicle_id: Number(record.id),
-            mode_id: modeId,
             operator_id: operatorId,
             vehicle_number: record.vehicle_number,
             vehicle_name: record.vehicle_name,
             total_seats: totalSeats,
-            seat_fare: seatFare,
             status
           }
         );
-        await execute(connection, `UPDATE schedule SET base_fare = :seat_fare WHERE vehicle_id = :vehicle_id`, {
+        await execute(connection, `UPDATE schedule SET base_fare = :base_fare WHERE vehicle_id = :vehicle_id`, {
           vehicle_id: Number(record.id),
-          seat_fare: seatFare
+          base_fare: Number(request.base_fare)
         });
         if (status === "inactive") {
           await deleteVehicleRoutesInternal(connection, Number(record.id));
@@ -1167,16 +1157,13 @@ async function upsertAdminResource(resourceKey, record) {
       const vehicleId = await getNextPrimaryKey(connection, "vehicle", "vehicle_id", "vehicle_seq");
       await execute(
         connection,
-        `INSERT INTO vehicle (vehicle_id, mode_id, operator_id, vehicle_number, vehicle_name, total_seats, seat_fare, status)
-         VALUES (:vehicle_id, :mode_id, :operator_id, :vehicle_number, :vehicle_name, :total_seats, :seat_fare, :status)`,
+        `INSERT INTO vehicle (vehicle_id, operator_id, vehicle_number, vehicle_name, total_seats, status) VALUES (:vehicle_id, :operator_id, :vehicle_number, :vehicle_name, :total_seats, :status)`,
         {
           vehicle_id: vehicleId,
-          mode_id: modeId,
           operator_id: operatorId,
           vehicle_number: record.vehicle_number,
           vehicle_name: record.vehicle_name,
           total_seats: totalSeats,
-          seat_fare: seatFare,
           status
         }
       );
@@ -1234,7 +1221,7 @@ async function upsertAdminResource(resourceKey, record) {
     if (resourceKey === "routes") {
       const routeId = record.id || await getNextPrimaryKey(connection, "route", "route_id", "route_seq");
       const routeName = `RT-${routeId}`;
-      const vehicleRows = await queryRows(connection, "SELECT total_seats, seat_fare, mode_id, operator_id, status FROM vehicle WHERE vehicle_id = :vehicle_id", { vehicle_id: Number(record.vehicle_id) });
+      const vehicleRows = await queryRows(connection, "SELECT v.total_seats, o.operator_id, o.mode_id, v.status FROM vehicle v JOIN operator o ON v.operator_id = o.operator_id WHERE v.vehicle_id = :vehicle_id", { vehicle_id: Number(record.vehicle_id) });
       const existingSchedule = (await queryRows(connection, "SELECT schedule_id, seats_remaining FROM schedule WHERE route_id = :route_id", { route_id: routeId }))[0];
       const routeStatus = normalizeStatus(record.status, ["active", "inactive"], "active");
       const selectedVehicle = vehicleRows[0];
@@ -1278,18 +1265,16 @@ async function upsertAdminResource(resourceKey, record) {
       }
 
       if (record.id) {
-        await execute(connection, `UPDATE route SET mode_id = :mode_id, operator_id = :operator_id, start_location_id = :origin, end_location_id = :destination WHERE route_id = :route_id`, {
-          mode_id: Number(record.mode_id),
+        await execute(connection, `UPDATE route SET operator_id = :operator_id, start_location_id = :origin, end_location_id = :destination WHERE route_id = :route_id`, {
           operator_id: Number(record.operator_id),
           origin: Number(record.origin),
           destination: Number(record.destination),
           route_id: routeId
         });
       } else {
-        await execute(connection, `INSERT INTO route (route_id, route_name, mode_id, operator_id, start_location_id, end_location_id) VALUES (:route_id, :route_name, :mode_id, :operator_id, :origin, :destination)`, {
+        await execute(connection, `INSERT INTO route (route_id, route_name, operator_id, start_location_id, end_location_id) VALUES (:route_id, :route_name, :operator_id, :origin, :destination)`, {
           route_id: routeId,
           route_name: routeName,
-          mode_id: Number(record.mode_id),
           operator_id: Number(record.operator_id),
           origin: Number(record.origin),
           destination: Number(record.destination)
@@ -1305,9 +1290,18 @@ async function upsertAdminResource(resourceKey, record) {
         if (shiftedArrival && shiftedDeparture && shiftedArrival > shiftedDeparture) {
           throw new Error("Invalid stop timing. Arrival cannot be after departure");
         }
-        const routeStopId = await getNextPrimaryKey(connection, "route_stop", "route_stop_id", "route_stop_seq");
-        await execute(connection, `INSERT INTO route_stop (route_stop_id, route_id, location_id, stop_sequence, arrival_datetime, departure_datetime) VALUES (:route_stop_id, :route_id, :location_id, :stop_sequence, TO_TIMESTAMP(:arrival_datetime, 'YYYY-MM-DD"T"HH24:MI'), TO_TIMESTAMP(:departure_datetime, 'YYYY-MM-DD"T"HH24:MI'))`, {
-          route_stop_id: routeStopId,
+        await execute(connection, `INSERT INTO route_stop (
+                                    route_id,
+                                    location_id,
+                                    stop_sequence,
+                                    arrival_datetime,
+                                    departure_datetime
+                                   ) VALUES (
+                                    :route_id,
+                                    :location_id,
+                                    :stop_sequence,
+                                    TO_TIMESTAMP(:arrival_datetime, 'YYYY-MM-DD"T"HH24:MI'), 
+                                    TO_TIMESTAMP(:departure_datetime, 'YYYY-MM-DD"T"HH24:MI'))`, {
           route_id: routeId,
           location_id: Number(stop.location_id),
           stop_sequence: index + 1,
@@ -1322,24 +1316,24 @@ async function upsertAdminResource(resourceKey, record) {
       }
 
       if (existingSchedule) {
-        await execute(connection, `UPDATE schedule SET vehicle_id = :vehicle_id, departure_datetime = TO_TIMESTAMP(:departure_datetime, 'YYYY-MM-DD"T"HH24:MI'), arrival_datetime = TO_TIMESTAMP(:arrival_datetime, 'YYYY-MM-DD"T"HH24:MI'), base_fare = :seat_fare, seats_remaining = LEAST(:vehicle_capacity, seats_remaining), status = :status WHERE schedule_id = :schedule_id`, {
+        await execute(connection, `UPDATE schedule SET vehicle_id = :vehicle_id, departure_datetime = TO_TIMESTAMP(:departure_datetime, 'YYYY-MM-DD"T"HH24:MI'), arrival_datetime = TO_TIMESTAMP(:arrival_datetime, 'YYYY-MM-DD"T"HH24:MI'), base_fare = :baseFare, seats_remaining = LEAST(:vehicle_capacity, seats_remaining), status = :status WHERE schedule_id = :schedule_id`, {
           vehicle_id: Number(record.vehicle_id),
           departure_datetime: record.departureDateTime,
           arrival_datetime: record.arrivalDateTime,
+          baseFare: Number(request.base_fare),
           vehicle_capacity: Number(vehicleRows[0]?.total_seats || 0),
-          seat_fare: Number(vehicleRows[0]?.seat_fare || 0),
           status: routeStatus,
           schedule_id: existingSchedule.schedule_id
         });
       } else {
         const scheduleId = await getNextPrimaryKey(connection, "schedule", "schedule_id", "schedule_seq");
-        await execute(connection, `INSERT INTO schedule (schedule_id, route_id, vehicle_id, departure_datetime, arrival_datetime, base_fare, seats_remaining, status) VALUES (:schedule_id, :route_id, :vehicle_id, TO_TIMESTAMP(:departure_datetime, 'YYYY-MM-DD"T"HH24:MI'), TO_TIMESTAMP(:arrival_datetime, 'YYYY-MM-DD"T"HH24:MI'), :seat_fare, :seats_remaining, :status)`, {
+        await execute(connection, `INSERT INTO schedule (schedule_id, route_id, vehicle_id, departure_datetime, arrival_datetime, base_fare, seats_remaining, status) VALUES (:schedule_id, :route_id, :vehicle_id, TO_TIMESTAMP(:departure_datetime, 'YYYY-MM-DD"T"HH24:MI'), TO_TIMESTAMP(:arrival_datetime, 'YYYY-MM-DD"T"HH24:MI'), :baseFare, :seats_remaining, :status)`, {
           schedule_id: scheduleId,
           route_id: routeId,
           vehicle_id: Number(record.vehicle_id),
           departure_datetime: record.departureDateTime,
           arrival_datetime: record.arrivalDateTime,
-          seat_fare: Number(vehicleRows[0]?.seat_fare || 0),
+          baseFare: Number(request.base_fare),
           seats_remaining: Number(vehicleRows[0]?.total_seats || 0),
           status: routeStatus
         });
