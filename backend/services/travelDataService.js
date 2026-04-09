@@ -423,18 +423,68 @@ async function getNextPrimaryKey(connection, tableName, columnName, sequenceName
 }
 
 async function deleteBookingResourceInternal(connection, bookingId) {
-  const bookingRows = await queryRows(connection, "SELECT schedule_id FROM booking WHERE booking_id = :id", { id: bookingId });
-  const seatRows = await queryRows(connection, "SELECT COUNT(*) AS seat_count FROM booking_passenger WHERE booking_id = :id", { id: bookingId });
-  if (bookingRows.length) {
-    await execute(connection, "UPDATE schedule SET seats_remaining = seats_remaining + :seat_count WHERE schedule_id = :schedule_id", {
+  const bookingRows = await queryRows(connection, 
+    "SELECT schedule_id, total_amount, booking_status FROM booking WHERE booking_id = :id", 
+    { id: bookingId }
+  );
+  
+  if (!bookingRows.length) return;
+  const booking = bookingRows[0];
+  if (String(booking.booking_status).toLowerCase() !== 'cancelled') {
+    const seatRows = await queryRows(connection, 
+      "SELECT COUNT(*) AS seat_count FROM booking_passenger WHERE booking_id = :id", 
+      { id: bookingId }
+    );
+    
+    await execute(connection, 
+      "UPDATE schedule SET seats_remaining = seats_remaining + :seat_count WHERE schedule_id = :schedule_id", {
       seat_count: Number(seatRows[0]?.seat_count || 0),
-      schedule_id: bookingRows[0].schedule_id
+      schedule_id: booking.schedule_id
     });
+
+    await execute(connection, 
+      "UPDATE booking SET booking_status = 'Cancelled' WHERE booking_id = :id", 
+      { id: bookingId }
+    );
+
+    await execute(connection, 
+      "UPDATE payment SET payment_status = 'Refund Pending' WHERE booking_id = :id", 
+      { id: bookingId }
+    );
+
+    const existingCancellation = await queryRows(connection, 
+      "SELECT cancellation_id FROM cancellation WHERE booking_id = :id", 
+      { id: bookingId }
+    );
+
+    if (existingCancellation.length) {
+      await execute(connection,
+        `UPDATE cancellation SET 
+            cancellation_date = SYSTIMESTAMP, 
+            refund_amount = :refund_amount, 
+            cancellation_reason = :reason, 
+            refund_status = 'Initiated' 
+         WHERE booking_id = :id`,
+        {
+          refund_amount: booking.total_amount,
+          reason: "System initiated cancellation due to resource deletion",
+          id: bookingId
+        }
+      );
+    } else {
+      const cancellationId = await getNextPrimaryKey(connection, "cancellation", "cancellation_id", "cancellation_seq");
+      await execute(connection,
+        `INSERT INTO cancellation (cancellation_id, booking_id, cancellation_date, refund_amount, cancellation_reason, refund_status)
+         VALUES (:cancellation_id, :booking_id, SYSTIMESTAMP, :refund_amount, :reason, 'Initiated')`,
+        {
+          cancellation_id: cancellationId,
+          booking_id: bookingId,
+          refund_amount: booking.total_amount,
+          reason: "System initiated cancellation due to resource deletion"
+        }
+      );
+    }
   }
-  await execute(connection, "DELETE FROM payment WHERE booking_id = :id", { id: bookingId });
-  await execute(connection, "DELETE FROM cancellation WHERE booking_id = :id", { id: bookingId });
-  await execute(connection, "DELETE FROM booking_passenger WHERE booking_id = :id", { id: bookingId });
-  await execute(connection, "DELETE FROM booking WHERE booking_id = :id", { id: bookingId });
 }
 
 async function deleteRouteResourceInternal(connection, routeId) {
@@ -1383,7 +1433,6 @@ async function deleteAdminResource(resourceKey, recordId) {
     return { success: true };
   });
 }
-
 
 module.exports = {
   searchTravels,
