@@ -1150,7 +1150,7 @@ async function upsertAdminResource(resourceKey, record) {
 
     if (resourceKey === "locations") {
       if (record.id) {
-        await execute(connection, `UPDATE location SET location_name = :location_name, city = :city, state = :state, country = :country WHERE location_id = :id`, record);
+        await execute(connection, `UPDATE location SET location_name = :location_name, city = :city, state = :state, country = :country, location_type = :location_type WHERE location_id = :id`, record);
         return { ...record, id: record.id };
       }
 
@@ -1164,16 +1164,25 @@ async function upsertAdminResource(resourceKey, record) {
 
     if (resourceKey === "vehicles") {
       const operatorId = Number(record.operator_id);
+      const totalSeats = Number(record.total_seats);
       const status = normalizeStatus(record.status, ["active", "inactive"], "active");
 
       if (record.id) {
         await execute(
           connection,
           `UPDATE vehicle
-              SET status = :status
+              SET operator_id = :operator_id,
+                  vehicle_number = :vehicle_number,
+                  vehicle_name = :vehicle_name,
+                  total_seats = :total_seats,
+                  status = :status
             WHERE vehicle_id = :vehicle_id`,
           {
             vehicle_id: Number(record.id),
+            operator_id: operatorId,
+            vehicle_number: record.vehicle_number,
+            vehicle_name: record.vehicle_name,
+            total_seats: totalSeats,
             status
           }
         );

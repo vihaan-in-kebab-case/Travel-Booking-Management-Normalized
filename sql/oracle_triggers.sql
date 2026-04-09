@@ -138,9 +138,9 @@ FOR EACH ROW
 BEGIN
   IF (:OLD.vehicle_number != :NEW.vehicle_number) OR
      (:OLD.operator_id    != :NEW.operator_id)    OR
-     (:OLD.type           != :NEW.type)           OR
-     (:OLD.total_seats    != :NEW.total_seats)    OR
-     (:OLD.model_name     != :NEW.model_name) THEN
+     (:OLD.vehicle_id           != :NEW.vehicle_id) OR
+     (:OLD.vehicle_name           != :NEW.vehicle_name) OR
+     (:OLD.total_seats    != :NEW.total_seats)  THEN
     RAISE_APPLICATION_ERROR(
       -20007,
       'Vehicle details cannot be modified after vehicle creation.'
