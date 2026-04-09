@@ -214,7 +214,6 @@ function AdminCancellationsPage() {
                 <th>Reimbursement</th>
                 <th>Refund Status</th>
                 <th>Reason</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -267,21 +266,16 @@ function AdminCancellationsPage() {
                       placeholder="Cancellation reason"
                     />
                   </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="primary-button"
-                      disabled={savingId === record.id}
-                      onClick={() => handleSave(record)}
-                    >
-                      {savingId === record.id ? "Saving..." : "Save"}
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <div className="panel-actions" style={{ marginTop: '1rem', textAlign: 'right' }}>
+            <button className="primary-button" onClick={() => filteredRecords.forEach(handleSave)}>
+            Save All Changes
+            </button>
+</div>
       </div>
     </section>
   );

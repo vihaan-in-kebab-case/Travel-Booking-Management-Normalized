@@ -31,7 +31,7 @@ function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="admin-grid">
+      <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '1rem' }}>
         <div className="panel">
           <h3>Recent Bookings</h3>
           <div className="table-wrap">

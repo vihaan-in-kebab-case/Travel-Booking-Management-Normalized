@@ -30,15 +30,16 @@ function AdminLayout() {
           <NavLink to="/admin/payments">Payments</NavLink>
           <NavLink to="/admin/cancellations">Cancellations</NavLink>
         </nav>
+      </aside>
+      <main className="admin-main">
+        <header className="admin-top-bar" style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem' }}>
         <button type="button" className="ghost-button" onClick={handleLogout}>
           Logout
         </button>
-      </aside>
-      <main className="admin-main">
+        </header>
         <Outlet />
-      </main>
-    </div>
-  );
+    </main>
+  </div>
+);
 }
-
 export default AdminLayout;

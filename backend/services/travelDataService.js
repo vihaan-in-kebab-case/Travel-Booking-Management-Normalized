@@ -430,18 +430,9 @@ async function deleteBookingResourceInternal(connection, bookingId) {
   
   if (!bookingRows.length) return;
   const booking = bookingRows[0];
-  if (String(booking.booking_status).toLowerCase() !== 'cancelled') {
-    const seatRows = await queryRows(connection, 
-      "SELECT COUNT(*) AS seat_count FROM booking_passenger WHERE booking_id = :id", 
-      { id: bookingId }
-    );
-    
-    await execute(connection, 
-      "UPDATE schedule SET seats_remaining = seats_remaining + :seat_count WHERE schedule_id = :schedule_id", {
-      seat_count: Number(seatRows[0]?.seat_count || 0),
-      schedule_id: booking.schedule_id
-    });
 
+  if (String(booking.booking_status).toLowerCase() !== 'cancelled') {
+    
     await execute(connection, 
       "UPDATE booking SET booking_status = 'Cancelled' WHERE booking_id = :id", 
       { id: bookingId }
@@ -467,7 +458,7 @@ async function deleteBookingResourceInternal(connection, bookingId) {
          WHERE booking_id = :id`,
         {
           refund_amount: booking.total_amount,
-          reason: "System initiated cancellation due to resource deletion",
+          reason: "System initiated: Linked resource deleted",
           id: bookingId
         }
       );
@@ -480,7 +471,7 @@ async function deleteBookingResourceInternal(connection, bookingId) {
           cancellation_id: cancellationId,
           booking_id: bookingId,
           refund_amount: booking.total_amount,
-          reason: "System initiated cancellation due to resource deletion"
+          reason: "System initiated: Linked resource deleted"
         }
       );
     }

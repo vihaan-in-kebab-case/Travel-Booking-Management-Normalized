@@ -108,8 +108,8 @@ function BookingHistoryPage() {
 
             <div className="meta-grid">
               <span>Booking ID: {booking.id}</span>
-              <span>Departure: {formatDateTime(booking.travel?.departureDateTime)}</span>
-              <span>Arrival: {formatDateTime(booking.travel?.arrivalDateTime)}</span>
+              <span>Departure:&nbsp;{formatDateTime(booking.travel?.departureDateTime)}</span>
+              <span>Arrival:&nbsp;{formatDateTime(booking.travel?.arrivalDateTime)}</span>
               <span>Seats: {booking.selectedSeats.join(", ")}</span>
               <span>Passengers: {booking.passengers.length}</span>
               <span>Total: {booking.totalAmountLabel}</span>
@@ -137,8 +137,8 @@ function BookingHistoryPage() {
                   booking.travel.intermediateStops.map((stop) => (
                     <div key={`${booking.id}-${stop.location_id}-${stop.arrivalDateTime}`} className="history-stop-row">
                       <strong>{stop.location_name || stop.city}</strong>
-                      <span>Arrival: {formatDateTime(stop.arrivalDateTime)}</span>
-                      <span>Departure: {formatDateTime(stop.departureDateTime)}</span>
+                      <span>Arrival:&nbsp;{formatDateTime(stop.arrivalDateTime)}</span>
+                      <span>Departure:&nbsp;{formatDateTime(stop.departureDateTime)}</span>
                     </div>
                   ))
                 ) : (

@@ -155,14 +155,12 @@ function BookingFlowPage() {
           {travel.origin} to {travel.destination}
         </p>
         <div className="meta-grid">
-          <span>Departure: {formatDateTime(travel.departureDateTime)}</span>
-          <span>Arrival: {formatDateTime(travel.arrivalDateTime)}</span>
+          <span>Departure:&nbsp;{formatDateTime(travel.departureDateTime)}</span>
+          <span>Arrival:&nbsp;{formatDateTime(travel.arrivalDateTime)}</span>
           <span>{travel.seatsAvailable} seats remaining</span>
           <span>{travel.price} per seat</span>
         </div>
       </div>
-
-      {error && <p className="error-text">{error}</p>}
       {intermediateStops.length > 0 && (
         <div className="panel">
           <p className="eyebrow">Intermediate Stops</p>
@@ -170,8 +168,8 @@ function BookingFlowPage() {
             {intermediateStops.map((stop, index) => (
               <div key={`${stop.location_id}-${index}`} className="history-stop-row">
                 <strong>{stop.location_name || stop.city}</strong>
-                <span>Arrival: {formatDateTime(stop.arrivalDateTime)}</span>
-                <span>Departure: {formatDateTime(stop.departureDateTime)}</span>
+                <span>Arrival:&nbsp;{formatDateTime(stop.arrivalDateTime)}</span>
+                <span>Departure:&nbsp;{formatDateTime(stop.departureDateTime)}</span>
               </div>
             ))}
           </div>
@@ -180,6 +178,12 @@ function BookingFlowPage() {
 
       <PassengerForm passengers={passengers} onChange={setPassengers} maxPassengers={maxPassengers} />
       <PaymentForm payment={payment} onChange={setPayment} totalAmount={totalAmount} onSubmit={handleBooking} submitting={submitting} />
+      {error && (
+  <div className="alert alert--danger" style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
+    <span>{error}</span>
+    <button onClick={() => setError("")} style={{ marginLeft: '10px' }}>&times;</button>
+  </div>
+)}
     </section>
   );
 }
