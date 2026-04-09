@@ -136,11 +136,11 @@ BEFORE UPDATE
 ON vehicle
 FOR EACH ROW
 BEGIN
-  IF (:OLD.vehicle_number != :NEW.vehicle_number) OR
-     (:OLD.operator_id    != :NEW.operator_id)    OR
-     (:OLD.vehicle_id           != :NEW.vehicle_id) OR
-     (:OLD.vehicle_name           != :NEW.vehicle_name) OR
-     (:OLD.total_seats    != :NEW.total_seats)  THEN
+  IF (:OLD.vehicle_id != :NEW.vehicle_id) OR
+     (:OLD.operator_id != :NEW.operator_id)    OR
+     (:OLD.vehicle_number != :NEW.vehicle_number) OR
+     (:OLD.vehicle_name != :NEW.vehicle_name) OR
+     (:OLD.total_seats != :NEW.total_seats)  THEN
     RAISE_APPLICATION_ERROR(
       -20007,
       'Vehicle details cannot be modified after vehicle creation.'
@@ -150,8 +150,7 @@ END;
 /
 
 CREATE OR REPLACE TRIGGER trg_prevent_location_type_update
-BEFORE UPDATE
-ON location
+BEFORE UPDATE ON location
 FOR EACH ROW
 BEGIN
   IF :OLD.location_type != :NEW.location_type THEN
