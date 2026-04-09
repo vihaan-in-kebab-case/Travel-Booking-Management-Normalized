@@ -783,6 +783,7 @@ async function getRouteFormOptions() {
   });
 }
 async function createPassenger(connection, payload) {
+  const passengerId = await getNextPrimaryKey(connection, "passenger", "passenger_id", "passenger_seq");
   await execute(
     connection,
     `INSERT INTO passenger (passenger_id, passenger_name, age, gender, id_proof_type, id_proof_number)
@@ -916,7 +917,7 @@ async function createBooking(payload) {
     );
 
     for (let index = 0; index < payload.passengers.length; index += 1) {
-      const passengerId = await createPassenger(connection, { ...payload.passengers[index] });
+      const passengerId = await createPassenger(connection, { ...payload.passengers[index], userId: payload.userId });
       await execute(
         connection,
         `INSERT INTO booking_passenger (booking_id, passenger_id, seat_number, fare)
@@ -1122,6 +1123,7 @@ async function upsertAdminResource(resourceKey, record) {
 
     if (resourceKey === "vehicles") {
       const operatorId = Number(record.operator_id);
+      const totalSeats = Number(record.total_seats);
       const status = normalizeStatus(record.status, ["active", "inactive"], "active");
 
       if (record.id) {
@@ -1131,6 +1133,7 @@ async function upsertAdminResource(resourceKey, record) {
               SET operator_id = :operator_id,
                   vehicle_number = :vehicle_number,
                   vehicle_name = :vehicle_name,
+                  total_seats = :total_seats,
                   status = :status
             WHERE vehicle_id = :vehicle_id`,
           {
@@ -1138,6 +1141,7 @@ async function upsertAdminResource(resourceKey, record) {
             operator_id: operatorId,
             vehicle_number: record.vehicle_number,
             vehicle_name: record.vehicle_name,
+            total_seats: totalSeats,
             status
           }
         );
