@@ -137,10 +137,10 @@ function assignSeats({ totalSeats, bookedSeats, requestedSeatCount }) {
 function getBookedSeatsForSchedule(scheduleId, tables) {
   const activeBookingIds = tables.bookings
     .filter((booking) => String(booking.schedule_id) === String(scheduleId) && String(booking.booking_status).toLowerCase() !== "cancelled")
-    .map((booking) => booking.booking_id);
+    .map((booking) => String(booking.booking_id));
 
   return tables.bookingPassengers
-    .filter((item) => activeBookingIds.includes(item.booking_id))
+    .filter((item) => activeBookingIds.includes(String(item.booking_id)))
     .map((item) => String(item.seat_number || "").trim())
     .filter(Boolean);
 }
@@ -178,6 +178,7 @@ function buildShiftedSchedule(schedule, offsetMs = 0) {
 }
 
 function getRoutePath(route, tables, schedule, offsetMs = 0) {
+  if (!route) return [];
   const shiftedSchedule = buildShiftedSchedule(schedule, offsetMs);
   const start = byId(tables.locations, "location_id", route?.start_location_id);
   const end = byId(tables.locations, "location_id", route?.end_location_id);
@@ -587,10 +588,10 @@ async function getCancellationsByUser(userId) {
     const tables = await loadTables(connection);
     const bookingIds = tables.bookings
       .filter((booking) => String(booking.user_id) === String(userId))
-      .map((booking) => booking.booking_id);
+      .map((booking) => String(booking.booking_id));
 
     return tables.cancellations
-      .filter((item) => bookingIds.includes(item.booking_id))
+      .filter((item) => bookingIds.includes(String(item.booking_id)))
       .map((item) => buildCancellationView(item, tables));
   });
 }
