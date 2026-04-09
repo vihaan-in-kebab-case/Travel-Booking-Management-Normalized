@@ -261,9 +261,6 @@ button {
 .ghost-button {
   background: rgba(15, 118, 110, 0.1);
   color: var(--primary-dark);
-  position: absolute;
-  top: 10px;
-  right: 20px;
 }
 
 .primary-button:hover,
