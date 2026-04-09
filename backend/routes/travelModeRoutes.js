@@ -1,0 +1,9 @@
+const express = require("express");
+const router = express.Router();
+
+const { fetchTravelModes } = require("../controllers/travelModeController");
+const protect = require("../middleware/authMiddleware");
+
+router.get("/", protect, fetchTravelModes);
+
+module.exports = router;
