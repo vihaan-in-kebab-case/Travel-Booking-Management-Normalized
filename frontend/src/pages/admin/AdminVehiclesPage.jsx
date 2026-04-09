@@ -19,8 +19,6 @@ function AdminVehiclesPage() {
 
   const loadOptions = async () => {
     const result = await getVehicleFormOptions();
-    // mode options still fetched but only used to show mode_name on each operator —
-    // the vehicle form no longer has a standalone mode_id field.
     setOperatorOptions(result.operators);
   };
 
@@ -29,8 +27,6 @@ function AdminVehiclesPage() {
     loadOptions();
   }, []);
 
-  // BCNF change: mode_id and seat_fare removed from vehicle fields.
-  // Mode is now implicit through the operator; fare lives on the schedule (base_fare).
   const fields = useMemo(
     () => [
       {
@@ -62,7 +58,6 @@ function AdminVehiclesPage() {
     await loadRecords();
   };
 
-  // renderValue: show the operator's label (which embeds mode info) for operator_id column
   const renderValue = (record, field) => {
     if (field.name === "operator_id") {
       const found = operatorOptions.find(

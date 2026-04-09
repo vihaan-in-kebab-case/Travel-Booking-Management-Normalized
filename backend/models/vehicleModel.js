@@ -89,13 +89,13 @@ const getVehicleById = async (id) => {
 // Update Vehicle
 const updateVehicle = async (
   id,
-  { mode_id, operator_id, vehicle_number, vehicle_name, total_seats, status }
+  { mode_id, operator_id, vehicle_number, vehicle_name, status }
 ) => {
   const [result] = await db.execute(
     `UPDATE vehicle
-     SET mode_id = ?, operator_id = ?, vehicle_number = ?, vehicle_name = ?, total_seats = ?, status = ?
+     SET mode_id = ?, operator_id = ?, vehicle_number = ?, vehicle_name = ?, status = ?
      WHERE vehicle_id = ?`,
-    [mode_id, operator_id, vehicle_number, vehicle_name, total_seats, status, id]
+    [mode_id, operator_id, vehicle_number, vehicle_name, status, id]
   );
 
   return result.affectedRows;

@@ -81,11 +81,10 @@ const editVehicle = async (req, res) => {
       operator_id,
       vehicle_number,
       vehicle_name,
-      total_seats,
       status
     } = req.body;
 
-    if (!mode_id || !operator_id || !vehicle_number || !vehicle_name || !total_seats || !status) {
+    if (!mode_id || !operator_id || !vehicle_number || !vehicle_name || !status) {
       return errorResponse(res, "All fields are required", 400);
     }
 
@@ -99,7 +98,6 @@ const editVehicle = async (req, res) => {
       operator_id,
       vehicle_number,
       vehicle_name,
-      total_seats,
       status
     });
 

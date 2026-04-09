@@ -463,7 +463,7 @@ async function loadTables(connection) {
   const modes = await queryRows(connection, "SELECT mode_id, mode_name FROM travel_mode ORDER BY mode_id");
   const operators = await queryRows(connection, "SELECT operator_id, operator_name, mode_id, contact_email, contact_phone FROM operator ORDER BY operator_id");
   const locations = await queryRows(connection, "SELECT location_id, location_name, city, state, country, location_type FROM location ORDER BY location_id");
-  const passengers = await queryRows(connection, "SELECT passenger_id, user_id, passenger_name, age, gender, id_proof_type, id_proof_number FROM passenger");
+  const passengers = await queryRows(connection, "SELECT passenger_id, passenger_name, age, gender, id_proof_type, id_proof_number FROM passenger");
   const vehicles = await queryRows(connection, "SELECT v.vehicle_id, v.operator_id, v.vehicle_number, v.vehicle_name, v.total_seats, v.status, o.mode_id FROM vehicle v JOIN operator o ON v.operator_id = o.operator_id");
   const routes = await queryRows(connection, "SELECT r.route_id, r.route_name, o.mode_id, o.operator_id, r.start_location_id, r.end_location_id FROM route r JOIN operator o ON r.operator_id = o.operator_id ORDER BY r.route_id");
   const routeStops = await queryRows(connection, "SELECT route_id, location_id, stop_sequence, arrival_datetime, departure_datetime FROM route_stop ORDER BY route_id, stop_sequence");
@@ -785,11 +785,10 @@ async function getRouteFormOptions() {
 async function createPassenger(connection, payload) {
   await execute(
     connection,
-    `INSERT INTO passenger (passenger_id, user_id, passenger_name, age, gender, id_proof_type, id_proof_number)
-     VALUES (:passenger_id, :user_id, :passenger_name, :age, :gender, :id_proof_type, :id_proof_number)`,
+    `INSERT INTO passenger (passenger_id, passenger_name, age, gender, id_proof_type, id_proof_number)
+     VALUES (:passenger_id, :passenger_name, :age, :gender, :id_proof_type, :id_proof_number)`,
     {
       passenger_id: passengerId,
-      user_id: payload.userId,
       passenger_name: payload.passenger_name,
       age: Number(payload.age),
       gender: payload.gender,
@@ -917,7 +916,7 @@ async function createBooking(payload) {
     );
 
     for (let index = 0; index < payload.passengers.length; index += 1) {
-      const passengerId = await createPassenger(connection, { ...payload.passengers[index], userId: payload.userId });
+      const passengerId = await createPassenger(connection, { ...payload.passengers[index] });
       await execute(
         connection,
         `INSERT INTO booking_passenger (booking_id, passenger_id, seat_number, fare)
@@ -1123,7 +1122,6 @@ async function upsertAdminResource(resourceKey, record) {
 
     if (resourceKey === "vehicles") {
       const operatorId = Number(record.operator_id);
-      const totalSeats = Number(record.total_seats);
       const status = normalizeStatus(record.status, ["active", "inactive"], "active");
 
       if (record.id) {
@@ -1133,7 +1131,6 @@ async function upsertAdminResource(resourceKey, record) {
               SET operator_id = :operator_id,
                   vehicle_number = :vehicle_number,
                   vehicle_name = :vehicle_name,
-                  total_seats = :total_seats,
                   status = :status
             WHERE vehicle_id = :vehicle_id`,
           {
@@ -1141,7 +1138,6 @@ async function upsertAdminResource(resourceKey, record) {
             operator_id: operatorId,
             vehicle_number: record.vehicle_number,
             vehicle_name: record.vehicle_name,
-            total_seats: totalSeats,
             status
           }
         );

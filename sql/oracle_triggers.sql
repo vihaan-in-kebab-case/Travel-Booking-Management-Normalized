@@ -131,6 +131,20 @@ BEGIN
 END;
 /
 
+CREATE OR REPLACE TRIGGER trg_prevent_total_seats_update
+BEFORE UPDATE OF total_seats
+ON vehicle
+FOR EACH ROW
+BEGIN
+  IF :OLD.total_seats != :NEW.total_seats THEN
+    RAISE_APPLICATION_ERROR(
+      -20007,
+      'total_seats cannot be modified after vehicle creation'
+    );
+  END IF;
+END;
+/
+
 CREATE OR REPLACE TRIGGER trg_booking_bi
 BEFORE INSERT ON booking
 FOR EACH ROW
