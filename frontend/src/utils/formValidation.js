@@ -11,8 +11,6 @@ function parseDateTime(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-// BCNF change: mode_id removed from route — operator implies mode.
-// base_fare validation added.
 export function validateRouteForm(form) {
   if (!form.origin) {
     return "Select an origin location.";
@@ -118,8 +116,6 @@ export function validateSearchFilters(filters) {
   return "";
 }
 
-// BCNF change: mode_id removed from vehicle — operator already carries mode_id.
-// Validation no longer checks mode_id or the mode/operator match (that's structural now).
 export function validateVehicleForm(form, operatorOptions = []) {
   if (!form.operator_id) {
     return "Select an operator.";

@@ -7,7 +7,6 @@ const {
   deleteOperator
 } = require("../models/operatorModel");
 
-// Create Operator
 const addOperator = async (req, res) => {
   try {
     const { operator_name, mode_id, contact_email, contact_phone } = req.body;
@@ -32,7 +31,6 @@ const addOperator = async (req, res) => {
   }
 };
 
-// Get All Operators
 const fetchOperators = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -45,7 +43,6 @@ const fetchOperators = async (req, res) => {
   }
 };
 
-// Get Single Operator
 const fetchOperatorById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -62,7 +59,6 @@ const fetchOperatorById = async (req, res) => {
   }
 };
 
-// Update Operator
 const editOperator = async (req, res) => {
   try {
     const { id } = req.params;
@@ -93,7 +89,6 @@ const editOperator = async (req, res) => {
   }
 };
 
-// Delete Operator
 const removeOperator = async (req, res) => {
   try {
     const { id } = req.params;

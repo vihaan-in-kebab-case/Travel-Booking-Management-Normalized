@@ -1,6 +1,4 @@
 const db = require("../config/db");
-
-// Create Location
 const createLocation = async ({ location_name, city, state, location_type }) => {
   const [result] = await db.execute(
     `INSERT INTO location (location_name, city, state, location_type)
@@ -11,7 +9,6 @@ const createLocation = async ({ location_name, city, state, location_type }) => 
   return result.insertId;
 };
 
-// Get All Locations (with search)
 const getAllLocations = async (search = "") => {
   let query = `
     SELECT 
@@ -42,7 +39,6 @@ const getAllLocations = async (search = "") => {
   return rows;
 };
 
-// Get Location by ID
 const getLocationById = async (id) => {
   const [rows] = await db.execute(
     `SELECT * FROM location WHERE location_id = ?`,
@@ -52,7 +48,6 @@ const getLocationById = async (id) => {
   return rows[0];
 };
 
-// Update Location
 const updateLocation = async (id, { location_name, city, state, location_type }) => {
   const [result] = await db.execute(
     `UPDATE location
@@ -64,7 +59,6 @@ const updateLocation = async (id, { location_name, city, state, location_type })
   return result.affectedRows;
 };
 
-// Delete Location
 const deleteLocation = async (id) => {
   const [result] = await db.execute(
     `DELETE FROM location WHERE location_id = ?`,

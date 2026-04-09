@@ -1,6 +1,4 @@
 const db = require("../config/db");
-
-// Create Operator
 const createOperator = async ({ operator_name, mode_id, contact_email, contact_phone }) => {
   const [result] = await db.execute(
     `INSERT INTO operator (operator_name, mode_id, contact_email, contact_phone)
@@ -11,7 +9,6 @@ const createOperator = async ({ operator_name, mode_id, contact_email, contact_p
   return result.insertId;
 };
 
-// Get All Operators
 const getAllOperators = async (search = "") => {
   let query = `
     SELECT 
@@ -44,7 +41,6 @@ const getAllOperators = async (search = "") => {
   return rows;
 };
 
-// Get Operator By ID
 const getOperatorById = async (operator_id) => {
   const [rows] = await db.execute(
     `SELECT 
@@ -63,7 +59,6 @@ const getOperatorById = async (operator_id) => {
   return rows[0];
 };
 
-// Update Operator
 const updateOperator = async (operator_id, { operator_name, mode_id, contact_email, contact_phone }) => {
   const [result] = await db.execute(
     `UPDATE operator
@@ -75,7 +70,6 @@ const updateOperator = async (operator_id, { operator_name, mode_id, contact_ema
   return result.affectedRows;
 };
 
-// Delete Operator
 const deleteOperator = async (operator_id) => {
   const [result] = await db.execute(
     `DELETE FROM operator WHERE operator_id = ?`,

@@ -7,7 +7,6 @@ const {
   deleteLocation
 } = require("../models/locationModel");
 
-// Add Location
 const addLocation = async (req, res) => {
   try {
     const { location_name, city, state, location_type } = req.body;
@@ -32,7 +31,6 @@ const addLocation = async (req, res) => {
   }
 };
 
-// Get All Locations
 const fetchLocations = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -45,7 +43,6 @@ const fetchLocations = async (req, res) => {
   }
 };
 
-// Get Single Location
 const fetchLocationById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -63,7 +60,6 @@ const fetchLocationById = async (req, res) => {
   }
 };
 
-// Update Location
 const editLocation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -94,7 +90,6 @@ const editLocation = async (req, res) => {
   }
 };
 
-// Delete Location
 const removeLocation = async (req, res) => {
   try {
     const { id } = req.params;

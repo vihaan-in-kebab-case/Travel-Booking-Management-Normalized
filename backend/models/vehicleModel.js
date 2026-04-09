@@ -1,6 +1,4 @@
 const db = require("../config/db");
-
-// Create Vehicle
 const createVehicle = async ({
   mode_id,
   operator_id,
@@ -19,7 +17,6 @@ const createVehicle = async ({
   return result.insertId;
 };
 
-// Get All Vehicles (with search)
 const getAllVehicles = async (search = "") => {
   let query = `
     SELECT 
@@ -63,7 +60,6 @@ const getAllVehicles = async (search = "") => {
   return rows;
 };
 
-// Get Vehicle by ID
 const getVehicleById = async (id) => {
   const [rows] = await db.execute(
     `SELECT 
@@ -86,7 +82,6 @@ const getVehicleById = async (id) => {
   return rows[0];
 };
 
-// Update Vehicle
 const updateVehicle = async (
   id,
   { mode_id, operator_id, vehicle_number, vehicle_name, status }
@@ -101,7 +96,6 @@ const updateVehicle = async (
   return result.affectedRows;
 };
 
-// Delete Vehicle
 const deleteVehicle = async (id) => {
   const [result] = await db.execute(
     `DELETE FROM vehicle WHERE vehicle_id = ?`,

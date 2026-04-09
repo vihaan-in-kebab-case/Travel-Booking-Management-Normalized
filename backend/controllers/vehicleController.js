@@ -7,7 +7,6 @@ const {
   deleteVehicle
 } = require("../models/vehicleModel");
 
-// Add Vehicle
 const addVehicle = async (req, res) => {
   try {
     const {
@@ -41,7 +40,6 @@ const addVehicle = async (req, res) => {
   }
 };
 
-// Get All Vehicles
 const fetchVehicles = async (req, res) => {
   try {
     const search = req.query.search || "";
@@ -54,7 +52,6 @@ const fetchVehicles = async (req, res) => {
   }
 };
 
-// Get Single Vehicle
 const fetchVehicleById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -72,7 +69,6 @@ const fetchVehicleById = async (req, res) => {
   }
 };
 
-// Update Vehicle
 const editVehicle = async (req, res) => {
   try {
     const { id } = req.params;
@@ -110,7 +106,6 @@ const editVehicle = async (req, res) => {
   }
 };
 
-// Delete Vehicle
 const removeVehicle = async (req, res) => {
   try {
     const { id } = req.params;
