@@ -131,15 +131,33 @@ BEGIN
 END;
 /
 
-CREATE OR REPLACE TRIGGER trg_prevent_total_seats_update
-BEFORE UPDATE OF total_seats
+CREATE OR REPLACE TRIGGER trg_prevent_vehicle_update
+BEFORE UPDATE
 ON vehicle
 FOR EACH ROW
 BEGIN
-  IF :OLD.total_seats != :NEW.total_seats THEN
+  IF (:OLD.vehicle_number != :NEW.vehicle_number) OR
+     (:OLD.operator_id    != :NEW.operator_id)    OR
+     (:OLD.type           != :NEW.type)           OR
+     (:OLD.total_seats    != :NEW.total_seats)    OR
+     (:OLD.model_name     != :NEW.model_name) THEN
     RAISE_APPLICATION_ERROR(
       -20007,
-      'total_seats cannot be modified after vehicle creation'
+      'Vehicle details cannot be modified after vehicle creation.'
+    );
+  END IF;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_prevent_location_type_update
+BEFORE UPDATE
+ON location
+FOR EACH ROW
+BEGIN
+  IF :OLD.location_type != :NEW.location_type THEN
+    RAISE_APPLICATION_ERROR(
+      -20008,
+      'Location type cannot be modified after location creation.'
     );
   END IF;
 END;
